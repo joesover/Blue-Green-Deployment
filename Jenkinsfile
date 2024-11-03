@@ -16,9 +16,9 @@ pipeline {
         TAG = "${params.DOCKER_TAG}"
         KUBE_NAMESPACE = 'webapps'
         AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
-        AWS_ECR_FRONTEND_REPO_NAME = credentials('ECR_REPO1')
-        AWS_ECR_BACKEND_REPO_NAME = credentials('ECR_REPO2')
-        AWS_DEFAULT_REGION = 'us-east-1'
+        AWS_ECR_FRONTEND_REPO_NAME = credentials('ecr_repo1')
+        AWS_ECR_BACKEND_REPO_NAME = credentials('ecr_repo2')
+        AWS_DEFAULT_REGION = 'eu-west-2'
         REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/"
         NVD_API_KEY = credentials('nvd-api-key')
     }
@@ -32,7 +32,7 @@ pipeline {
 
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', credentialsId: 'GITHUB', url: 'https://github.com/gyenoch/Blue-Green-Deployment.git'
+                git branch: 'main', credentialsId: 'Github', url: 'https://github.com/joesover/Blue-Green-Deployment.git'
             }
         }
 
@@ -213,8 +213,8 @@ pipeline {
         stage('Deploy MongoDB and Service') {
             steps {
                 dir('Kubernetes-Manifests-file') {
-                    withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://EFCD6C924B0CADA4EF47D2E578265EFC.gr7.us-east-1.eks.amazonaws.com') {
-                        //sh "aws eks update-kubeconfig --name devopsshack-cluster --region us-east-1"
+                    withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://1495469FD1B8DEECD7399292B3E39447.yl4.eu-west-2.eks.amazonaws.com') {
+                        //sh "aws eks update-kubeconfig --name devopsshack-cluster --region eu-west-2"
                         sh "kubectl apply -f Database -n ${KUBE_NAMESPACE}"
                     }
                 }
@@ -224,7 +224,7 @@ pipeline {
         stage('Deploy Frontend & Backend Services') {
             steps {
                 dir('Kubernetes-Manifests-file/Service') {
-                    withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://EFCD6C924B0CADA4EF47D2E578265EFC.gr7.us-east-1.eks.amazonaws.com') {
+                    withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://1495469FD1B8DEECD7399292B3E39447.yl4.eu-west-2.eks.amazonaws.com') {
                         sh '''
                         kubectl apply -f backend-svc.yml --force -n ${KUBE_NAMESPACE}
                         kubectl apply -f frontend-svc.yml --force -n ${KUBE_NAMESPACE}
@@ -250,7 +250,7 @@ pipeline {
                             deploymentBackend = 'backend-deployment-green.yml' 
                         }
 
-                        withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://EFCD6C924B0CADA4EF47D2E578265EFC.gr7.us-east-1.eks.amazonaws.com') {
+                        withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://1495469FD1B8DEECD7399292B3E39447.yl4.eu-west-2.eks.amazonaws.com') {
                             sh "kubectl apply -f ${deploymentBackend} --record -n ${KUBE_NAMESPACE}"
                             sh "kubectl apply -f ${deploymentFrontend} --record -n ${KUBE_NAMESPACE}"
                             sh "sleep 20"
@@ -268,7 +268,7 @@ pipeline {
                 script {
                     def newEnv = params.DEPLOY_ENV
 
-                    withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://EFCD6C924B0CADA4EF47D2E578265EFC.gr7.us-east-1.eks.amazonaws.com') {
+                    withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://1495469FD1B8DEECD7399292B3E39447.yl4.eu-west-2.eks.amazonaws.com') {
                         sh """
                         kubectl patch svc backend-svc -p '{"spec": {"selector": {"app": "backend", "version": "${newEnv}"}}}' -n ${KUBE_NAMESPACE}
                         kubectl patch svc frontend-svc -p '{"spec": {"selector": {"app": "frontend", "version": "${newEnv}"}}}' -n ${KUBE_NAMESPACE}
@@ -283,7 +283,7 @@ pipeline {
             steps {
                 script {
                     def verifyEnv = params.DEPLOY_ENV
-                    withKubeConfig(caCertificate: '', clusterName: ' devopsshack-cluster', contextName: '', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://EFCD6C924B0CADA4EF47D2E578265EFC.gr7.us-east-1.eks.amazonaws.com') {
+                    withKubeConfig(caCertificate: '', clusterName: ' devopsshack-cluster', contextName: '', credentialsId: 'k8-cred', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://1495469FD1B8DEECD7399292B3E39447.yl4.eu-west-2.eks.amazonaws.com') {
                     sh "kubectl get pods -l version=${verifyEnv} -n ${KUBE_NAMESPACE}"
                     sh "kubectl get svc backend-svc -n ${KUBE_NAMESPACE}"
                     sh "kubectl get svc frontend-svc -n ${KUBE_NAMESPACE}"
